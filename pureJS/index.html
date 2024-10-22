@@ -70,23 +70,23 @@
     </div>
 
     <div class="checkbox-group">
-        <input type="checkbox" id="isPrgFile" checked>
+        <input type="checkbox" id="isPrgFile" >
         <label for="isPrgFile">Is PRG File</label>
     </div>
 
     <div class="form-group">
         <label for="baseAddr">Base Address (hex):</label>
-        <input type="text" id="baseAddr" placeholder="e.g., 0x0800" value = "0x0800">
+        <input type="text" id="baseAddr" placeholder="e.g., 0x0800" value = "0x8000">
     </div>
 
     <div class="form-group">
         <label for="basicUpstart">BASIC Upstart (hex):</label>
-        <input type="text" id="basicUpstart" placeholder="e.g., 0x0900"  value = "0x0900">
+        <input type="text" id="basicUpstart" placeholder="e.g., 0x0900"  value = "">
     </div>
 
     <div class="form-group">
         <label for="range">Range (hex):</label>
-        <input type="text" id="range" value="0x0000-0xffff" placeholder="e.g., 0x0000-0xffff"  value = "0x0000-0xffff">
+        <input type="text" id="range"  placeholder="e.g., 0x0000-0xffff"  value = "0x8002-0xffff">
     </div>
 
     <div class="form-group">
@@ -102,7 +102,7 @@
     <button onclick="process()">Process File</button>
 
     <div id="output"></div><br>
-    <textarea id="outputASM" cols = 100 rows = 100></textarea>
+    <textarea id="outputASM" cols = 80 rows = 100></textarea><textarea id="outputHEX" cols = 80 rows = 100></textarea><br>
 
     <script>
 
@@ -127,9 +127,8 @@
             }
 
             try {
-                // In un'implementazione reale, qui leggeresti il file
         		let sourceCode = await Generate(file, baseAddr, isPrgFile, range, basicUpstart);
-console.log("sourceCode",sourceCode);
+/*console.log("sourceCode",sourceCode);
                 // Applicazione delle trasformazioni
 console.log("RemoveBadCode...",sourceCode);
                 Enhance.RemoveBadCode(sourceCode, range);
@@ -143,7 +142,7 @@ console.log("FlattenByteSequences...");
                 Enhance.FlattenByteSequences(sourceCode);
 console.log("DivideByteSections...");
                 Enhance.DivideByteSections(sourceCode, 16);
-
+*/
                 // Output
 console.log("FormatOutput...");
                 Output.FormatOutput(sourceCode);
@@ -152,7 +151,36 @@ console.log("SaveCode...");
             } catch (error) {
                 document.getElementById('output').textContent = `Error: ${error.message}`;
             }
+
+
         }
+
+function memoryDump(uint8Array, startAddress = 0, bytesPerRow = 16, startAddrDisass = -1) {
+console.log("Dumping ", uint8Array , " from ", startAddress);
+    let result = '';
+	offset = 0;
+	if (startAddrDisass === -1) {
+		offset = 0;
+	} else {
+		offset = startAddrDisass - startAddress;
+	}
+
+    // Itera l'array gestendo blocchi della dimensione specificata da bytesPerRow
+    for (let i =  offset; i < uint8Array.length; i += bytesPerRow) {
+        // Calcola l'indirizzo corrente
+        let currentAddress = (startAddress + i).toString(16).padStart(4, '0').toUpperCase();
+        // Estrai un blocco di numeri di dimensione bytesPerRow
+        let chunk = uint8Array.slice(i, i + bytesPerRow);
+
+        // Converti ogni numero in esadecimale, con padding per farlo essere sempre di 2 cifre
+        let hexLine = Array.from(chunk).map(num => num.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+
+        // Aggiungi l'indirizzo e la riga di byte formattata
+        result += `${currentAddress}: ${hexLine}\n`;
+    }
+
+    return result;
+}
     </script>
 </body>
 </html>

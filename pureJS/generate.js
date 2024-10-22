@@ -44,6 +44,8 @@ console.log("Generate - bytes=",bytes);
     let index = 0;
 
     getBaseAddress();
+console.log("Dis", bytes,baseAddr,range[0]);
+document.getElementById("outputHEX").value = memoryDump(bytes,parseInt(baseAddr, 16) ,  16, range[0])
 
     let outputSrc = [];
     let baseSet = false;
