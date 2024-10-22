@@ -1,6 +1,3 @@
-const Utils = require("./utils.js")
-const SysLabels = require("./syslabels.js")
-
 const Enhance = {
     VIC_BASE: 0x0000,
     SCREEN_BUFFERS: [0x0400],
@@ -26,7 +23,10 @@ const Enhance = {
 
         var lastIndex=0
         for(var i=0; i<sourceCode.length; i++) {
-            if(lastIndex+10<i) lastIndex=i && process.stdout.write(`Examining code for vic banking: ${Math.round((i/sourceCode.length) * 100)}%\r`);
+            if(lastIndex+10<i) {
+				lastIndex=i
+				// console.log(`Examining code for vic banking: ${Math.round((i/sourceCode.length) * 100)}%\r`);
+			}
             let op = sourceCode[i]
 
             //Find vic bank
@@ -35,20 +35,23 @@ const Enhance = {
                     (op.opcode === "stx" && sourceCode[i-1].opcode === "ldx" && sourceCode[i-1].mode === "imm") ||
                     (op.opcode === "sty" && sourceCode[i-1].opcode === "ldy" && sourceCode[i-1].mode === "imm")) {
                         Enhance.VIC_BASE = [0xc000, 0x8000, 0x4000, 0x0000][sourceCode[i-1].bytes[1] & 3]
-                } 
+                }
             }
         }
-        console.log("\r")
+        console.log("End loop in DetermineEnvironment")
 
-        
+
         if (model.substring(0,3).toLowerCase() === "c64"){
             lastIndex = 0;
             for(var i=0; i<sourceCode.length; i++) {
-                if(lastIndex+10<i) lastIndex=i && process.stdout.write(`Examining code for screen ram areas: ${Math.round((i/sourceCode.length) * 100)}%\r`);
+                if(lastIndex+10<i) {
+					lastIndex=i
+					//console.log(`Examining code for screen ram areas: ${Math.round((i/sourceCode.length) * 100)}%\r`);
+				}
                 let op = sourceCode[i]
 
                 //And try to find screen buffers
-                if(op.target === 0xd018 && op.mode === "abs") {    
+                if(op.target === 0xd018 && op.mode === "abs") {
                     if ((op.opcode === "sta" && sourceCode[i-1].opcode === "lda" && sourceCode[i-1].mode === "imm") ||
                         (op.opcode === "stx" && sourceCode[i-1].opcode === "ldx" && sourceCode[i-1].mode === "imm") ||
                         (op.opcode === "sty" && sourceCode[i-1].opcode === "ldy" && sourceCode[i-1].mode === "imm")) {
@@ -58,12 +61,12 @@ const Enhance = {
                             if(Enhance.SCREEN_BUFFERS.indexOf(Enhance.VIC_BASE + sBuffer) === -1) {
                                 Enhance.SCREEN_BUFFERS.push(Enhance.VIC_BASE + sBuffer)
                             }
-                    } 
+                    }
                 }
             }
         }
-        
-        
+
+
         console.log("\r")
         return sourceCode
     },
@@ -76,10 +79,13 @@ const Enhance = {
         //Otherwise mark all code up to that point as bytes
         //If nothing before branch then ignore it
         range = range.split("-").map(a => parseInt(a,16))
-
+console.log("ENHANCE - range", range, sourceCode.length);
         var lastIndex=0
         for(var i=0; i<sourceCode.length; i++) {
-            if(lastIndex+10<i) lastIndex=i && process.stdout.write(`Cleaning bad branches: ${Math.round((i/sourceCode.length) * 100)}%\r`);
+            if(lastIndex+10<i) {
+				lastIndex=i
+				//console.log(`Cleaning bad branches: ${Math.round((i/sourceCode.length) * 100)}%\r`);
+			}
             let op = sourceCode[i]
 
             if(op.mode === "rel") {
@@ -88,7 +94,7 @@ const Enhance = {
                 }
             }
         }
-        console.log("\r")
+        console.log("End loop in RemoveBadCode")
 
 
 
@@ -96,23 +102,26 @@ const Enhance = {
         let firstIns = -1;
         lastIndex=0
         for(var i=0; i<sourceCode.length; i++) {
-            if(lastIndex+10<i) lastIndex=i && process.stdout.write(`Cleaning bad code: ${Math.round((i/sourceCode.length) * 100)}%\r`);
+            if(lastIndex+10<i) {
+				lastIndex=i
+				//console.log(`Cleaning bad code: ${Math.round((i/sourceCode.length) * 100)}%\r`);
+			}
             let op = sourceCode[i]
 
             if(op.base >= 0) {
-                
+
 
                 if(op.opcode && op.target !== null && op.mode !== "imm" && op.mode !== "rel" && op.target < 256 && !Utils.IsZP(op.mode)){ // THIS code fails for sta $0001,y as it uses ZP when assembled ---> && op.mode !== "aby" && op.mode !== "abx") {
                     if(op.mode === "aby" || op.mode === "abx" || op.mode === "abs") {
                         op.src = op.src.replace(/([a-zA-Z]{3})/, "$1.a")
                     } else {
-                        
+
                         sourceCode[i].opcode = null
                         sourceCode[i] = Utils.FormatByteLine(sourceCode[i])
                         op = sourceCode[i]
                     }
 
-                    
+
                 } else {
                     if(!op.opcode && firstIns > -1) {
                         //Now check previous
@@ -130,11 +139,11 @@ const Enhance = {
                 }
             }
         }
-        console.log("\r")
+        console.log("End RemoveBadCode")
 
-        
+
         sourceCode = Enhance.FlattenByteSequences(sourceCode);
-        return sourceCode;      
+        return sourceCode;
     },
 
 
@@ -159,7 +168,10 @@ const Enhance = {
         //console.log(Enhance.COLOUR_BUFFER.toString(16), Enhance.COLOUR_BUFFER.toString(16).padStart(2,"0"), sysLabels[Enhance.COLOUR_BUFFER.toString(16).padStart(4,"0")], Enhance.COLOUR_BUFFER)
         var lastIndex=0
         for(var i=0; i<sourceCode.length; i++) {
-            if(lastIndex+10<i) lastIndex=i && process.stdout.write(`Generating label: ${Math.round((i/sourceCode.length) * 100)}%\r`);
+            if(lastIndex+10<i) {
+				lastIndex=i
+				//console.log(`Generating label: ${Math.round((i/sourceCode.length) * 100)}%\r`);
+			}
 
             let op = sourceCode[i]
             if(op.target) {
@@ -176,12 +188,12 @@ const Enhance = {
                             found = true
                         }
                     }
-                } 
+                }
 
                 //SYSLABELS
                 if(!found) {
                     if(sysLabels[op.target.toString(16)]) {
-                        op.src = op.src.replace(/\$[0-9a-fA-F]{1,4}/, sysLabels[op.target.toString(16)])      
+                        op.src = op.src.replace(/\$[0-9a-fA-F]{1,4}/, sysLabels[op.target.toString(16)])
 
                     //OTHERLABELS
                     } else {
@@ -193,20 +205,23 @@ const Enhance = {
                 }
             }
         }
-        console.log("\r")
+        console.log("End loop in GenerateLabels")
 
 
         //Clean unreached (unlabelled code)
         lastIndex=0
         for(var i=1; i<sourceCode.length; i++) {
-            if(lastIndex+10<i) lastIndex=i && process.stdout.write(`Cleaning unreached code: ${Math.round((i/sourceCode.length) * 100)}%\r`);
+            if(lastIndex+10<i) {
+				lastIndex=i
+				//console.log(`Cleaning unreached code: ${Math.round((i/sourceCode.length) * 100)}%\r`);
+			}
             let op = sourceCode[i]
 
             if(op.opcode && !sourceCode[i-1].opcode && !op.label) {
                 sourceCode[i] = Utils.FormatByteLine(sourceCode[i])
             }
         }
-        console.log("\r")
+        console.log("End GenerateLabels")
 
         return sourceCode
     },
@@ -215,7 +230,7 @@ const Enhance = {
     // FindLocalBranches(sourceCode) {
     //     lastIndex=0
     //     for(var i=1; i<sourceCode.length; i++) {
-    //         if(lastIndex+10<i) lastIndex=i && process.stdout.write(`Cleaning unreached code: ${Math.round((i/sourceCode.length) * 100)}%\r`);
+    //         if(lastIndex+10<i) lastIndex=i && console.log(`Cleaning unreached code: ${Math.round((i/sourceCode.length) * 100)}%\r`);
     //         let op = sourceCode[i]
 
     //         if(op.opcode && !sourceCode[i-1].opcode && !op.label) {
@@ -231,8 +246,11 @@ const Enhance = {
     DivideByteSections(sourceCode, max) {
         var lastIndex=0
         for(var i=0; i<sourceCode.length; i++){
-            if(lastIndex+10<i) lastIndex=i && process.stdout.write(`Tidying byte sections: ${Math.round((i/sourceCode.length) * 100)}%\r`);
-           
+            if(lastIndex+10<i) {
+				lastIndex=i
+				//console.log(`Tidying byte sections: ${Math.round((i/sourceCode.length) * 100)}%\r`);
+			}
+
             let op = sourceCode[i]
             if(!op.opcode && op.base !== -1 && !op.label) {
 
@@ -256,13 +274,13 @@ const Enhance = {
                     sourceCode[i] =  Utils.FormatByteLine(sourceCode[i]);
                     sourceCode.splice(i + 1, 0, Utils.FormatFillLine({
                         base: op.base + bStart,
-                        bytes: fill 
-                    }))                     
+                        bytes: fill
+                    }))
                     if(overflow.length) sourceCode.splice(i + 2, 0, Utils.FormatByteLine({
                         base: op.base + bStart + bCount,
-                        bytes: overflow 
-                    }))   
-                    if(!sourceCode[i].bytes.length) sourceCode.splice(i,1)                        
+                        bytes: overflow
+                    }))
+                    if(!sourceCode[i].bytes.length) sourceCode.splice(i,1)
                 }
 
                 if(op.bytes.length > max) {
@@ -270,15 +288,15 @@ const Enhance = {
                     sourceCode[i] =  Utils.FormatByteLine(sourceCode[i])
                     sourceCode.splice(i + 1, 0, Utils.FormatByteLine({
                        base: op.base + max,
-                       bytes: overflow 
+                       bytes: overflow
                     }))
-                }   
-            } 
+                }
+            }
         }
-        console.log("\r")
+        console.log("End DivideByteSections")
         return sourceCode
     },
-    
+
 
 
 
@@ -290,8 +308,11 @@ const Enhance = {
         var lastIndex = 0;
 
         for(var index = 0; index < sourceCode.length; index++) {
-            if(lastIndex+10<index) lastIndex=index && process.stdout.write(`Flattening byte sequences: ${Math.round((index/sourceCode.length) * 100)}%\r`);
-           
+            if(lastIndex+10<index) {
+				lastIndex=index
+				//console.log(`Flattening byte sequences: ${Math.round((index/sourceCode.length) * 100)}%\r`);
+			}
+
             let op = sourceCode[index];
             if(op.opcode || op.base === -1 || op.label) {
                 if(firstBytes !== -1) {
@@ -306,11 +327,11 @@ const Enhance = {
                     sourceCode.splice(index,1)
                     index--;
                 }
-            } 
+            }
         }
-        console.log("\r")
+        console.log("End FlattenByteSequences")
         return sourceCode;
     },
 
 }
-module.exports = Enhance
+
