@@ -1,6 +1,17 @@
 # Dis64
 Disassembler for C64 and VIC20 - 6502 assembly, outputs in Kick Assembler format.
 
+This is my attempt to get rid of node.js, which woould require users to download and install stuff on their machine (why?!?).
+
+With the help of AI I obtained this offline standalone version... but I don't know if the results actually match to the results of the original node.js version.
+
+Try it [here](https://jumpjack.github.io/Dis64_PureJS/pureJS)
+
+------------
+
+
+# Old readme
+
 Requires NodeJS installed
 
 The disassembler will attempt to do its best to detect VIC Bank allocation and Screen buffers, adding labels where it thinks they are used. Additionally it will add system labels where detected and provide a syslabels include file.
