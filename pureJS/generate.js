@@ -29,13 +29,14 @@ async function Generate(file, baseAddr, isPrgFile, range, entryPoint) {
 
     function getBaseAddress() {
         if(isPrgFile) {
-            baseAddr = bytes[0] + bytes[1] * 256;
+            temp = bytes[0] + bytes[1] * 256;
+			baseAddr = "0x" + temp.toString(16);
             index = 2;
         }
     }
 
     // Main execution
-    console.log("Disassembling " + file.name + "...");
+    console.log("Disassembling " + file.name + " in range ",range );
 
     range = range.split("-").map(a => parseInt(a,16));
 console.log("Generate - RANGE=",range);
