@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dis64 Web v0.2</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="file"],
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .checkbox-group {
+            margin: 10px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            background-color: #f9f9f9;
+        }
+    </style>
+	<script src="utils.js"></script>
+	<script src="opcodes.js"></script>
+	<script src="syslabels.js"></script>
+	<script src="output.js"></script>
+	<script src="generate.js"></script>
+	<script src="enhance.js"></script>
+</head>
+<body>
+    <h1>Dis64 Web v0.2</h1>
+
+    <div class="form-group">
+        <label for="fileInput">Input File:</label>
+        <input type="file" id="fileInput" required>
+    </div>
+
+    <div class="form-group">
+        <label for="outputPath">Output Path:</label>
+        <input type="text" id="outputPath" value="./dis64_output/" placeholder="Output path">
+    </div>
+
+    <div class="checkbox-group">
+        <input type="checkbox" id="isPrgFile" checked>
+        <label for="isPrgFile">Is PRG File</label>
+    </div>
+
+    <div class="form-group">
+        <label for="baseAddr">Base Address (hex):</label>
+        <input type="text" id="baseAddr" placeholder="e.g., 0x0800" value = "0x0800">
+    </div>
+
+    <div class="form-group">
+        <label for="basicUpstart">BASIC Upstart (hex):</label>
+        <input type="text" id="basicUpstart" placeholder="e.g., 0x0900"  value = "0x0900">
+    </div>
+
+    <div class="form-group">
+        <label for="range">Range (hex):</label>
+        <input type="text" id="range" value="0x0000-0xffff" placeholder="e.g., 0x0000-0xffff"  value = "0x0000-0xffff">
+    </div>
+
+    <div class="form-group">
+        <label for="model">Model:</label>
+        <select id="model">
+            <option value="C64">C64</option>
+            <option value="VIC20">VIC20</option>
+            <option value="VIC203K+">VIC20 3K+</option>
+            <option value="VIC208K+">VIC20 8K+</option>
+        </select>
+    </div>
+
+    <button onclick="process()">Process File</button>
+
+    <div id="output"></div><br>
+    <textarea id="outputASM"></textarea>
+
+    <script>
+
+        async function process() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please select an input file");
+                return;
+            }
+
+            const isPrgFile = document.getElementById('isPrgFile').checked;
+            const baseAddr = document.getElementById('baseAddr').value || (isPrgFile ? undefined : '0x0000');
+            const basicUpstart = document.getElementById('basicUpstart').value || undefined;
+            const range = document.getElementById('range').value;
+            const model = document.getElementById('model').value;
+            const savePath = document.getElementById('outputPath').value;
+
+            if (!isPrgFile && !baseAddr) {
+                console.log("No base address provided for non PRG file, assuming $0000");
+            }
+
+            try {
+                // In un'implementazione reale, qui leggeresti il file
+        		let sourceCode = await Generate(file, baseAddr, isPrgFile, range, basicUpstart);
+console.log("sourceCode",sourceCode);
+                // Applicazione delle trasformazioni
+console.log("RemoveBadCode...",sourceCode);
+                Enhance.RemoveBadCode(sourceCode, range);
+console.log("DetermineEnvironment...",sourceCode);
+                Enhance.DetermineEnvironment(sourceCode, model);
+console.log("DivideByteSections...");
+                Enhance.DivideByteSections(sourceCode, 16);
+console.log("GenerateLabels...");
+                Enhance.GenerateLabels(sourceCode, model);
+console.log("FlattenByteSequences...");
+                Enhance.FlattenByteSequences(sourceCode);
+console.log("DivideByteSections...");
+                Enhance.DivideByteSections(sourceCode, 16);
+
+                // Output
+console.log("FormatOutput...");
+                Output.FormatOutput(sourceCode);
+console.log("SaveCode...");
+                Output.SaveCode(file.name, savePath, sourceCode, basicUpstart, model);
+            } catch (error) {
+                document.getElementById('output').textContent = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
